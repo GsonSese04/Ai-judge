@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { supabaseServer } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 export default async function ScenariosPage() {
   const supabase = supabaseServer()
   const { data } = await supabase.from('scenarios').select('id, title, summary, difficulty, law_type, category').order('category', { ascending: true }).order('created_at', { ascending: false })
