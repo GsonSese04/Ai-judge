@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, :root {
+  height: 100%;
+}
+
+body {
+  @apply bg-court-bg text-court-brown font-sans antialiased;
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-md border border-court-beige;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-md bg-court-brown text-white hover:opacity-90 transition;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-md bg-court-beige text-court-brown hover:opacity-90 transition;
+}
+
+
