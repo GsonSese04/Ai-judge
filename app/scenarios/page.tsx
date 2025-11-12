@@ -15,12 +15,12 @@ export default async function ScenariosPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-serif">Predefined Case Scenarios</h2>
+    <div className="space-y-6 sm:space-y-8 px-4">
+      <h2 className="text-2xl sm:text-3xl font-serif">Predefined Case Scenarios</h2>
       {Object.entries(grouped).map(([cat, items]) => (
         <section key={cat} className="space-y-3">
-          <h3 className="text-xl font-medium">{cat}</h3>
-          <div className="grid md:grid-cols-2 gap-6">
+          <h3 className="text-lg sm:text-xl font-medium">{cat}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {items.map((s: any) => (
               <Link key={s.id} href={`/scenarios/${s.id}`} className="card p-6 hover:shadow-lg transition">
                 <div className="flex items-center justify-between">

@@ -1,11 +1,13 @@
 "use client"
 import { useEffect, useState } from 'react'
 import { supabaseBrowser } from '@/lib/supabase/client'
+import { useModal } from './ModalProvider'
 
 export function AuthButton() {
   const [email, setEmail] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const { showModal } = useModal()
 
   useEffect(() => {
     const load = async () => {
@@ -21,8 +23,11 @@ export function AuthButton() {
     setLoading(true)
     const { error } = await supabaseBrowser.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
     setLoading(false)
-    if (error) return alert(error.message)
-    alert('Check your email for the magic link')
+    if (error) {
+      showModal(error.message, 'Sign In Error', 'error')
+      return
+    }
+    showModal('Check your email for the magic link', 'Magic Link Sent', 'success')
   }
 
   async function signOut() {
@@ -31,17 +36,17 @@ export function AuthButton() {
 
   if (userEmail) {
     return (
-      <div className="flex items-center gap-3">
-        <span className="text-sm opacity-80">{userEmail}</span>
-        <button className="btn-secondary" onClick={signOut}>Sign out</button>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+        <span className="text-xs sm:text-sm opacity-80 break-all">{userEmail}</span>
+        <button className="btn-secondary text-xs sm:text-sm whitespace-nowrap" onClick={signOut}>Sign out</button>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <input className="border rounded p-2" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-      <button className="btn" onClick={signIn} disabled={loading || !email}>{loading ? 'Sending...' : 'Sign in'}</button>
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+      <input className="border rounded p-2 text-xs sm:text-sm flex-1 min-w-0" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <button className="btn text-xs sm:text-sm whitespace-nowrap" onClick={signIn} disabled={loading || !email}>{loading ? 'Sending...' : 'Sign in'}</button>
     </div>
   )
 }

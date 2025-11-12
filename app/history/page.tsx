@@ -11,16 +11,16 @@ export default async function HistoryPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-3xl font-serif">Case History</h2>
-      <div className="grid gap-4">
+    <div className="space-y-4 sm:space-y-6 px-4">
+      <h2 className="text-2xl sm:text-3xl font-serif">Case History</h2>
+      <div className="grid gap-3 sm:gap-4">
         {(cases ?? []).map(c => (
-          <Link key={c.id} href={`/case/${c.id}`} className="card p-4 flex items-center justify-between">
-            <div>
-              <div className="font-medium">{c.title || `Case ${c.id}`}</div>
-              <div className="text-sm opacity-70">{new Date(c.created_at as any).toLocaleString()}</div>
+          <Link key={c.id} href={`/case/${c.id}`} className="card p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm sm:text-base break-words">{c.title || `Case ${c.id}`}</div>
+              <div className="text-xs sm:text-sm opacity-70">{new Date(c.created_at as any).toLocaleString()}</div>
             </div>
-            <div className="text-sm px-2 py-1 rounded bg-court-beige">{c.status}</div>
+            <div className="text-xs sm:text-sm px-2 py-1 rounded bg-court-beige whitespace-nowrap">{c.status}</div>
           </Link>
         ))}
       </div>

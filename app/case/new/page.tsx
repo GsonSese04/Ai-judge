@@ -2,17 +2,19 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase/client'
+import { useModal } from '@/components/ModalProvider'
 
 export default function NewCasePage() {
   const [title, setTitle] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { showModal } = useModal()
 
   async function createCase() {
     setLoading(true)
     const { data: { user } } = await supabaseBrowser.auth.getUser()
     if (!user) {
-      alert('Please sign in first')
+      showModal('Please sign in first', 'Sign In Required', 'warning')
       setLoading(false)
       return
     }
@@ -22,7 +24,10 @@ export default function NewCasePage() {
       .select('id')
       .single()
     setLoading(false)
-    if (error) return alert(error.message)
+    if (error) {
+      showModal(error.message, 'Error Creating Case', 'error')
+      return
+    }
     router.replace(`/case/${data!.id}`)
   }
 

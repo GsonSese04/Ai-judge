@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
-import OpenAI from 'openai'
-import { toFile } from 'openai/uploads'
+import axios from 'axios'
+import FormData from 'form-data'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 120
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,31 +18,46 @@ export async function POST(req: NextRequest) {
       .createSignedUrl(storagePath, 60 * 10)
     if (signErr || !signed) return NextResponse.json({ error: signErr?.message || 'No signed URL' }, { status: 400 })
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, timeout: 120000 })
-    // Fetch the file and pass to Whisper
+    // Fetch the file and pass to OpenAI via Axios multipart
     const fileRes = await fetch(signed.signedUrl)
     if (!fileRes.ok) return NextResponse.json({ error: `Fetch audio failed: ${fileRes.status}` }, { status: 400 })
     const arrayBuffer = await fileRes.arrayBuffer()
-    const nodeFile = await toFile(Buffer.from(arrayBuffer), 'audio.webm', { type: 'audio/webm' })
+    const buffer = Buffer.from(arrayBuffer)
 
-    // Retry transient network errors (e.g., ECONNRESET)
+    const form = new FormData()
+    form.append('file', buffer, { filename: 'audio.webm', contentType: 'audio/webm' })
+    form.append('model', 'gpt-4o-mini-transcribe')
+    form.append('response_format', 'text')
+    form.append('language', 'en')
+
+    const { Agent: HttpAgent } = await import('http')
+    const { Agent: HttpsAgent } = await import('https')
+
+    const ax = axios.create({
+      baseURL: 'https://api.openai.com',
+      timeout: 120000,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        ...form.getHeaders(),
+      },
+      httpAgent: new HttpAgent({ keepAlive: true }),
+      httpsAgent: new HttpsAgent({ keepAlive: true }),
+      validateStatus: () => true,
+    })
+
     async function transcribeWithRetry(attempt = 1): Promise<string> {
-      try {
-        const resp = await openai.audio.transcriptions.create({
-          model: 'whisper-1',
-          file: nodeFile,
-          response_format: 'text',
-          language: 'en',
-        })
-        return typeof resp === 'string' ? resp : (resp as any).text || ''
-      } catch (err: any) {
-        if (attempt < 3) {
-          const delay = 500 * Math.pow(2, attempt - 1)
-          await new Promise(r => setTimeout(r, delay))
-          return transcribeWithRetry(attempt + 1)
-        }
-        throw err
+      const res = await ax.post('/v1/audio/transcriptions', form, { responseType: 'text' })
+      if (res.status >= 200 && res.status < 300 && typeof res.data === 'string') {
+        return res.data
       }
+      if (attempt < 3 && (res.status >= 500 || String(res.data || '').includes('ECONNRESET'))) {
+        const delay = 700 * Math.pow(2, attempt - 1)
+        await new Promise(r => setTimeout(r, delay))
+        return transcribeWithRetry(attempt + 1)
+      }
+      throw new Error(`Transcription failed: ${res.status} ${typeof res.data === 'string' ? res.data : JSON.stringify(res.data)}`)
     }
 
     const transcript = await transcribeWithRetry()
@@ -51,28 +68,49 @@ export async function POST(req: NextRequest) {
       .insert({ case_id: caseId, user_id: userId, stage, transcript, audio_url: storagePath })
     if (argErr) return NextResponse.json({ error: argErr.message }, { status: 400 })
 
-    // Check if both sides submitted for this stage
-    const { data: stageRows } = await supabase
-      .from('arguments')
-      .select('id, user_id')
-      .eq('case_id', caseId)
-      .eq('stage', stage)
+    // Check if case has AI opponent
+    const { data: caseData } = await supabase
+      .from('cases')
+      .select('opponent_type, ai_opponent_role')
+      .eq('id', caseId)
+      .single()
 
-    const uniqueUsers = new Set((stageRows || []).map(r => r.user_id))
-    if (uniqueUsers.size >= 2) {
-      // Progress to next stage
-      const { data: caseRow } = await supabase.from('cases').select('current_stage').eq('id', caseId).single()
-      if (caseRow) {
-        const order = ['opening_statement','plaintiff_argument','cross_examination','defendant_argument','closing_submission']
-        const idx = order.indexOf(caseRow.current_stage)
-        const next = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : 'verdict'
-        await supabase.from('cases').update({ current_stage: next }).eq('id', caseId)
-        if (next === 'verdict') {
-          // trigger verdict generation async
-          fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/verdict/${caseId}`, { method: 'POST' }).catch(() => {})
+    // If AI opponent, get user's role and trigger AI response
+    if (caseData?.opponent_type === 'ai') {
+      const { data: participant } = await supabase
+        .from('case_participants')
+        .select('role')
+        .eq('case_id', caseId)
+        .eq('user_id', userId)
+        .single()
+      
+      const userRole = participant?.role || 'A'
+      
+      // Trigger AI response asynchronously with better error handling
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+      fetch(`${baseUrl}/api/ai-lawyer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caseId, stage, userRole })
+      })
+      .then(res => {
+        if (!res.ok) {
+          console.error('AI lawyer API error:', res.status, res.statusText)
         }
-      }
+        return res.json()
+      })
+      .then(data => {
+        if (data.error) {
+          console.error('AI lawyer error:', data.error)
+        }
+      })
+      .catch(err => {
+        console.error('Failed to trigger AI lawyer:', err)
+      })
     }
+
+    // Note: Stage progression is now manual - users click "Next Stage" button
+    // This gives them time to read arguments before moving on
 
     return NextResponse.json({ transcript })
   } catch (e: any) {
