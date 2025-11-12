@@ -1,6 +1,6 @@
 "use client"
 import { useState } from 'react'
-import { supabaseBrowser } from '@/lib/supabase/client'
+import { supabaseBrowser, getEmailRedirectUrl } from '@/lib/supabase/client'
 import { useModal } from './ModalProvider'
 
 interface SignInPromptProps {
@@ -18,11 +18,12 @@ export function SignInPrompt({ message, onSignInSuccess }: SignInPromptProps) {
     if (!email.trim()) return
     
     setLoading(true)
+    const redirectUrl = getEmailRedirectUrl()
     const { error } = await supabaseBrowser.auth.signInWithOtp({ 
       email: email.trim(), 
       options: { 
         shouldCreateUser: true,
-        emailRedirectTo: 'https://ai-judge-sage.vercel.app'
+        emailRedirectTo: redirectUrl
       } 
     })
     setLoading(false)

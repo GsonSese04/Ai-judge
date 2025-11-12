@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from 'react'
-import { supabaseBrowser } from '@/lib/supabase/client'
+import { supabaseBrowser, getEmailRedirectUrl } from '@/lib/supabase/client'
 import { useModal } from './ModalProvider'
 
 export function AuthButton() {
@@ -21,11 +21,12 @@ export function AuthButton() {
 
   async function signIn() {
     setLoading(true)
+    const redirectUrl = getEmailRedirectUrl()
     const { error } = await supabaseBrowser.auth.signInWithOtp({ 
       email, 
       options: { 
         shouldCreateUser: true,
-        emailRedirectTo: 'https://ai-judge-sage.vercel.app'
+        emailRedirectTo: redirectUrl
       } 
     })
     setLoading(false)

@@ -62,13 +62,13 @@ export default function ScenarioDetail() {
               <option value="ai">AI Lawyer</option>
             </select>
             {opponentType === 'ai' && (
-              <p className="text-xs sm:text-sm opacity-70 mt-1">You'll play as Lawyer A against an AI opponent</p>
+              <p className="text-xs sm:text-sm opacity-70 mt-1">You'll play as Plaintiff against an AI opponent</p>
             )}
           </div>
           {opponentType === 'human' ? (
             <div className="flex flex-col sm:flex-row gap-3">
-              <button className="btn w-full sm:w-auto" onClick={() => createFromScenario('A')}>Join as Lawyer A</button>
-              <button className="btn-secondary w-full sm:w-auto" onClick={() => createFromScenario('B')}>Join as Lawyer B</button>
+              <button className="btn w-full sm:w-auto" onClick={() => createFromScenario('A')}>Join as Plaintiff</button>
+              <button className="btn-secondary w-full sm:w-auto" onClick={() => createFromScenario('B')}>Join as Defendant</button>
             </div>
           ) : (
             <button className="btn w-full sm:w-auto" onClick={() => createFromScenario('A')}>Start Case vs AI</button>

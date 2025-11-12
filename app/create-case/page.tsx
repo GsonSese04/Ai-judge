@@ -99,10 +99,10 @@ export default function CreateCasePage() {
             <option value="ai">AI Lawyer</option>
           </select>
           {opponentType === 'ai' && (
-            <p className="text-sm opacity-70 mt-1">You'll play as Lawyer A against an AI opponent (Lawyer B)</p>
+            <p className="text-sm opacity-70 mt-1">You'll play as Plaintiff against an AI opponent (Defendant)</p>
           )}
           {opponentType === 'human' && (
-            <p className="text-sm opacity-70 mt-1">You'll play as Lawyer A. Share the case link for another lawyer to join as Lawyer B.</p>
+            <p className="text-sm opacity-70 mt-1">You'll play as Plaintiff. Share the case link for another lawyer to join as Defendant.</p>
           )}
         </div>
         <button className="btn" onClick={onSubmit} disabled={loading || !title || !caseType}>

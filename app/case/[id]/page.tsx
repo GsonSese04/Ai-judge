@@ -643,12 +643,12 @@ export default function CasePage() {
           <div className="flex flex-col sm:flex-row gap-3">
             {availableRoles.includes('A') && (
               <button className="btn w-full sm:w-auto" onClick={() => joinCase('A')}>
-                Join as Lawyer A
+                Join as Plaintiff
               </button>
             )}
             {availableRoles.includes('B') && (
               <button className="btn-secondary w-full sm:w-auto" onClick={() => joinCase('B')}>
-                Join as Lawyer B
+                Join as Defendant
               </button>
             )}
             {availableRoles.length === 0 && (
@@ -848,7 +848,7 @@ export default function CasePage() {
             </div>
           ) : (
             <>
-              <VerdictCard result={verdict} />
+            <VerdictCard result={verdict} />
               <div className="flex justify-center pt-4">
                 <Link href="/start" className="btn text-sm sm:text-base">
                   ← Back to Cases
