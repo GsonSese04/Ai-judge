@@ -20,7 +20,10 @@ export function SignInPrompt({ message, onSignInSuccess }: SignInPromptProps) {
     setLoading(true)
     const { error } = await supabaseBrowser.auth.signInWithOtp({ 
       email: email.trim(), 
-      options: { shouldCreateUser: true } 
+      options: { 
+        shouldCreateUser: true,
+        emailRedirectTo: 'https://ai-judge-sage.vercel.app'
+      } 
     })
     setLoading(false)
     

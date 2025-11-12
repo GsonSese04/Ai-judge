@@ -21,7 +21,13 @@ export function AuthButton() {
 
   async function signIn() {
     setLoading(true)
-    const { error } = await supabaseBrowser.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
+    const { error } = await supabaseBrowser.auth.signInWithOtp({ 
+      email, 
+      options: { 
+        shouldCreateUser: true,
+        emailRedirectTo: 'https://ai-judge-sage.vercel.app'
+      } 
+    })
     setLoading(false)
     if (error) {
       showModal(error.message, 'Sign In Error', 'error')

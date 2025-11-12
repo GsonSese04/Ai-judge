@@ -46,7 +46,10 @@ export function SignInModal({ isOpen, onClose, onSuccess, message }: SignInModal
     setLoading(true)
     const { error } = await supabaseBrowser.auth.signInWithOtp({ 
       email: email.trim(), 
-      options: { shouldCreateUser: true } 
+      options: { 
+        shouldCreateUser: true,
+        emailRedirectTo: 'https://ai-judge-sage.vercel.app'
+      } 
     })
     setLoading(false)
     
